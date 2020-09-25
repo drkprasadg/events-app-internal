@@ -18,8 +18,8 @@ app.use(bodyParser.json());
 // from a cloud data store
 const mockEvents = {
     events: [
-        { title: 'an event', id: 1, description: 'something super cool', location: 'Austin' },
-        { title: 'another event', id: 2, description: 'something even better', location: 'Orlando' }
+        { title: 'an event', id: 1, description: 'something super cool', location: 'Austin', likes: 0 },
+        { title: 'another event', id: 2, description: 'something even better', location: 'Orlando', likes: 0 }
     ]
 };
 
@@ -52,6 +52,7 @@ app.post('/event', (req, res) => {
         title: req.body.title, 
         description: req.body.description,
         location: req.body.location,
+        likes: 0,
         id : mockEvents.events.length + 1
      }
     // add to the mock array
@@ -63,6 +64,31 @@ app.post('/event', (req, res) => {
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ message: err.message });
+});
+
+// Likes an event - in a real solution, this would update a cloud datastore.
+// Currently this simply increments the like counter in the mock array in memory
+// this will produce unexpected behavior in a stateless kubernetes cluster. 
+app.post('/event/like', (req, res) => {
+    console.log (req.body.id);
+    var objIndex = mockEvents.events.findIndex((obj => obj.id == req.body.id));
+    var likes = mockEvents.events[objIndex].likes;
+    mockEvents.events[objIndex].likes = ++likes;
+    res.json(mockEvents);
+});
+
+// unlikes an event - in a real solution, this would update a cloud datastore.
+// Currently this simply decrements the like counter in the mock array in memory
+// this will produce unexpected behavior in a stateless kubernetes cluster. 
+app.delete('/event/like', (req, res) => {
+
+    console.log (req.body.id);
+    var objIndex = mockEvents.events.findIndex((obj => obj.id == req.body.id));
+    var likes = mockEvents.events[objIndex].likes;
+    if (likes > 0) {
+        mockEvents.events[objIndex].likes = --likes;
+    }
+    res.json(mockEvents);
 });
 
 const PORT = 8082;
